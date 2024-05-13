@@ -7,5 +7,5 @@ type Command struct {
 
 // 所有命令都应该实现此接口Pro
 type ICommand interface {
-	Process(data string) (string, error)
+	Process(data string) ([]byte, error)
 }

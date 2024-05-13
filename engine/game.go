@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -14,10 +15,10 @@ func RegisterCMD(cmd string, processor ICommand) {
 	commands[cmd] = processor
 }
 
-func ProcessCMD(command Command) (string, error) {
+func ProcessCMD(command Command) ([]byte, error) {
 	processor, ok := commands[command.CMD]
 	if !ok {
-		return "", fmt.Errorf("command %s can not be recongnized.", command.CMD)
+		return nil, fmt.Errorf("command %s can not be recongnized.", command.CMD)
 	}
 
 	return processor.Process(command.Data)
@@ -26,4 +27,21 @@ func ProcessCMD(command Command) (string, error) {
 // 注册系统级别的命令，login，loginpwd，passwd
 func initSystemCommand() {
 
+	RegisterCMD("login", &LoginCMD{})
+}
+
+type LoginCMD struct{}
+
+func (c *LoginCMD) Process(data string) ([]byte, error) {
+	cmd := Command{CMD: "loginpwd", Data: "enter the password"}
+	d, _ := json.Marshal(cmd)
+	return d, nil
+}
+
+type LoginPwdCMD struct{}
+
+func (c *LoginPwdCMD) Process(data string) ([]byte, error) {
+	cmd := Command{CMD: "loginpwd", Data: "enter the password"}
+	d, _ := json.Marshal(cmd)
+	return d, nil
 }

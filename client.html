@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUD Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .content {
+            height: calc(100vh - 40px); /* 40px for input and button */
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .input-container {
+            display: flex;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            padding: 10px;
+            background-color: #f0f0f0;
+        }
+        input {
+            flex-grow: 1;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+        button {
+            width: 100px; /* Fixed width */
+            padding: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="content" id="message-container">
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed at orci sit amet lorem ullamcorper ultricies. Vivamus vel dui in neque ultrices blandit. Nullam lobortis tortor in metus lacinia, et lobortis odio posuere.</p>
+        <!-- 添加更多文本以生成滚动条 -->
+    </div>
+    <div class="input-container">
+        <input type="text" id="message-input" placeholder="Enter text...">
+        <button id="send-button">Send</button>
+    </div>
+
+    <h1>WebSocket Example</h1>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type your message...">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+    var maxScreens = 3; // 定义要保留的最大屏数
+    var messageContainer = document.getElementById('message-container');
+    
+    
+    // 创建一个隐藏的p元素，并将其添加到body中
+    var hiddenP = document.createElement('p');
+    hiddenP.style.visibility = 'hidden';
+    hiddenP.style.position = 'absolute';
+    hiddenP.style.whiteSpace = 'pre'; // 避免换行影响高度
+    hiddenP.textContent = 'dummy'; // 用一个字母作为内容，以便计算高度
+    document.body.appendChild(hiddenP);
+    var lineHeight = hiddenP.clientHeight;
+
+    // 移除隐藏的p元素
+    document.body.removeChild(hiddenP);
+
+    console.log("line height:",lineHeight)
+
+    document.getElementById('message-input').addEventListener('keypress', function(event) {
+        if (event.keyCode === 13) {
+            event.preventDefault(); // 阻止默认的回车换行行为
+            document.getElementById('send-button').click(); // 触发按钮点击事件
+        }
+    });
+    document.getElementById('send-button').addEventListener('click', function() {
+        var messageInput = document.getElementById('message-input');
+        var messageContainer = document.getElementById('message-container');
+        var newMessage = document.createElement('p');
+        newMessage.textContent = messageInput.value;
+        messageContainer.appendChild(newMessage);
+        // messageInput.value = '';
+
+        //发送命令
+        socket.send(messageInput.value);
+
+        // 删除超过最大屏数的消息
+        var messageCount = messageContainer.children.length;
+        var screenHeight = messageContainer.clientHeight;
+        console.log("msgCnt:",messageCount,",screenHeight:",screenHeight,",max:",maxScreens * screenHeight / lineHeight,",lines:",screenHeight / lineHeight)
+        if (messageCount > maxScreens * screenHeight / lineHeight) { // 假设每行高度为16px
+            var excess = messageCount - maxScreens * screenHeight / lineHeight;
+            for (var i = 0; i < excess; i++) {
+                messageContainer.removeChild(messageContainer.firstChild);
+            }
+        }
+
+        // 将滚动条滚动到消息容器的底部
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+    );
+        // 创建 WebSocket 连接
+        const socket = new WebSocket("ws://127.0.0.1:5250/");
+
+        // 当连接建立时触发
+        socket.onopen = function(event) {
+            console.log("WebSocket connection established.");
+        };
+
+        // 当接收到消息时触发
+        socket.onmessage = function(event) {
+            console.log("Message received:", event.data);
+            displayMessage(event.data);
+        };
+
+        // 当连接关闭时触发
+        socket.onclose = function(event) {
+            console.log("WebSocket connection closed.");
+        };
+
+        // 发送消息
+        function sendMessage() {
+            const messageInput = document.getElementById("message-input");
+            const message = messageInput.value;
+            socket.send(message);
+            messageInput.value = "";
+        }
+
+        // 显示消息
+        function displayMessage(message) {
+            const messagesDiv = document.getElementById("messages");
+            const p = document.createElement("p");
+            p.textContent = message;
+            messagesDiv.appendChild(p);
+        }
+    </script>
+</body>
+</html>
