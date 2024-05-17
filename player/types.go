@@ -11,5 +11,5 @@ type Player struct {
 	Passwd   string
 	Age      int
 	Scene    *maps.Scene
-	Invtory  []*item.Item
+	Invtory  []*item.Thing
 }

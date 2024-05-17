@@ -5,18 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MUD Game</title>
     <style>
-        body {
+
+body {
             margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
+            font-family: Courier New, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+
         }
+
+        .light-theme {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        .dark-theme {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+
         .content {
             height: calc(100vh - 40px); /* 40px for input and button */
             overflow-y: auto;
             padding: 10px;
         }
         .input-container {
-            display: flex;
+            display: flex; 
             position: fixed;
             bottom: 0;
             width: 100%;
@@ -41,7 +55,7 @@
 </head>
 <body>
     <div class="content" id="message-container">
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed at orci sit amet lorem ullamcorper ultricies. Vivamus vel dui in neque ultrices blandit. Nullam lobortis tortor in metus lacinia, et lobortis odio posuere.</p>
+        <p></p>
         <!-- 添加更多文本以生成滚动条 -->
     </div>
     <div class="input-container">
@@ -49,12 +63,31 @@
         <button id="send-button">Send</button>
     </div>
 
-    <h1>WebSocket Example</h1>
-    <div id="messages"></div>
-    <input type="text" id="messageInput" placeholder="Type your message...">
-    <button onclick="sendMessage()">Send</button>
+       <script>
 
-    <script>
+function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark-theme');
+                document.body.classList.remove('light-theme');
+            } else {
+                document.body.classList.add('light-theme');
+                document.body.classList.remove('dark-theme');
+            }
+        }
+
+        // 初次加载时应用主题
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            applyTheme('light');
+        } else {
+            applyTheme('dark');
+        }
+
+        // 监听主题变化
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+            applyTheme(e.matches ? 'light' : 'dark');
+        });
+
+        applyTheme('dark');
     var maxScreens = 3; // 定义要保留的最大屏数
     var messageContainer = document.getElementById('message-container');
     
@@ -82,13 +115,31 @@
     document.getElementById('send-button').addEventListener('click', function() {
         var messageInput = document.getElementById('message-input');
         var messageContainer = document.getElementById('message-container');
-        var newMessage = document.createElement('p');
-        newMessage.textContent = messageInput.value;
-        messageContainer.appendChild(newMessage);
-        // messageInput.value = '';
+        
 
-        //发送命令
-        socket.send(messageInput.value);
+        command = {"cmd":cmd,"data":messageInput.value}
+        console.log("send:",JSON.stringify(command));
+
+        socket.send(JSON.stringify(command));
+        addMessage("> " + messageInput.value);
+        // messageInput.value = '';
+    }
+    );
+
+    function addMessage(data) {
+        console.log("add:",data)
+        var newMessage = document.createElement('div');
+        // newMessage.textContent = data;
+        // if (cmd == "loginpwd") {
+        //     newMessage.innerText = "*******"
+        // } else {
+        //     newMessage.innerText = data
+        // }
+
+        newMessage.innerText = data
+        messageContainer.appendChild(newMessage);
+        
+
 
         // 删除超过最大屏数的消息
         var messageCount = messageContainer.children.length;
@@ -103,10 +154,20 @@
 
         // 将滚动条滚动到消息容器的底部
         messageContainer.scrollTop = messageContainer.scrollHeight;
-        }
-    );
+    }
+    
+    var hostname = window.location.hostname;
+    console.log("Hostname:", hostname);
+    var port = window.location.port;
+    if (port === "") {
+        port = window.location.protocol === "https:" ? "443" : "80";
+    }
+    console.log("Port:", port);
+
+
         // 创建 WebSocket 连接
-        const socket = new WebSocket("ws://127.0.0.1:5250/");
+        const socket = new WebSocket("ws://" + hostname +":" + port +"/");
+
 
         // 当连接建立时触发
         socket.onopen = function(event) {
@@ -116,7 +177,10 @@
         // 当接收到消息时触发
         socket.onmessage = function(event) {
             console.log("Message received:", event.data);
-            displayMessage(event.data);
+            // displayMessage(event.data);
+            command = JSON.parse(event.data);
+            addMessage(command.data)
+            process(command)
         };
 
         // 当连接关闭时触发
@@ -125,19 +189,35 @@
         };
 
         // 发送消息
-        function sendMessage() {
-            const messageInput = document.getElementById("message-input");
-            const message = messageInput.value;
-            socket.send(message);
-            messageInput.value = "";
-        }
+        // function sendMessage() {
+        //     const messageInput = document.getElementById("message-input");
+        //     const message = messageInput.value;
+        //     socket.send(message);
+        //     messageInput.value = "";
+        // }
 
         // 显示消息
-        function displayMessage(message) {
-            const messagesDiv = document.getElementById("messages");
-            const p = document.createElement("p");
-            p.textContent = message;
-            messagesDiv.appendChild(p);
+        // function displayMessage(message) {
+        //     const messagesDiv = document.getElementById("messages");
+        //     const p = document.createElement("p");
+        //     p.textContent = message;
+        //     messagesDiv.appendChild(p);
+        // }
+
+        var cmd ="";
+        function process(command) {
+            switch(command.cmd){
+                case "welcome":
+                    addMessage("请输入用户名：")
+                    cmd = "login";
+                    break;
+                case "loginpwd":
+                    cmd = "loginpwd";
+                    break;
+                default:
+                    cmd = "command"
+                    break;
+            }
         }
     </script>
 </body>

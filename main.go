@@ -10,7 +10,7 @@ func main() {
 	fmt.Println("hello")
 
 	//初始化世界
-	InitWorld()
+	//InitWorld()
 
 	//初始化WebSocketServer
 	engine.InitWebSocket()

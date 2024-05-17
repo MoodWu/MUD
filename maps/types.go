@@ -12,9 +12,10 @@ type Unit struct {
 }
 type Map struct {
 	Name        string        // 地图名称
+	Code        string        //唯一编码
 	Desc        string        // 地图描述
-	Width       int           // 地图长度
-	Length      int           //地图宽度
+	Long        int           // 地图长度
+	Wide        int           //地图宽度
 	RefreshTime int           //物品刷新时间
 	Scenes      []*Scene      //地图上的场景
 	Connections []*Connection //地图与其他地图的连接
@@ -22,19 +23,20 @@ type Map struct {
 
 type Connection struct {
 	Direction string
-	Dest      *Map
+	MapCode   string //通往的map的code
 }
 
 type Path struct {
 	Direction string
-	Dest      *Scene
+	SceneCode string //通往的Scene的code
 }
 type Scene struct {
 	Map   *Map // 所属地图
 	X     int
 	Y     int
 	Name  string
+	Code  string // 唯一编码
 	Desc  string
-	Items []*item.Item
+	Items []*item.Thing
 	Paths []*Path
 }
