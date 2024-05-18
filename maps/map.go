@@ -76,7 +76,7 @@ func LoadMap(data []byte) *Map {
 		s.X, s.Y = common.Convert2XY(v.Position)
 		s.Map = &m0
 		s.Items = make([]*item.Thing, 0)
-		s.Paths = make([]*Path, 0)
+		s.Path = make(map[string]string, 0)
 
 		//加载场景上的物品
 		for _, i := range v.Items {
@@ -97,8 +97,7 @@ func LoadMap(data []byte) *Map {
 
 		//加载路径
 		for k, v := range v.Direction {
-			path := Path{Direction: k, SceneCode: v}
-			s.Paths = append(s.Paths, &path)
+			s.Path[k] = v
 		}
 
 		//将移动也作为一种特殊的Item附加在场景上
@@ -106,7 +105,7 @@ func LoadMap(data []byte) *Map {
 	}
 
 	// 地图间的连接在另外的编排文件中
-	m0.Connections = make([]*Connection, 0)
+	m0.Connection = make(map[string]string, 0)
 
 	// printMap(&m0)
 	return &m0
@@ -219,14 +218,11 @@ func (m *Map) getPaddedString(s string, width int, x, y int) string {
 // 查询x,y坐标的场景是否有direction上的路径
 func (m *Map) HasPath(direction string, x, y int) bool {
 	s := m.GetSceneByXY(x, y)
-	if s != nil {
-		for _, p := range s.Paths {
-			if p.Direction == direction {
-				return true
-			}
-		}
+	if s == nil {
+		return false
 	}
-	return false
+	_, ok := s.Path[direction]
+	return ok
 }
 
 func (m *Map) GetSceneByXY(x, y int) *Scene {
@@ -237,6 +233,16 @@ func (m *Map) GetSceneByXY(x, y int) *Scene {
 	}
 	return nil
 }
+
+func (m *Map) GetSceneByCode(code string) *Scene {
+	for _, s := range m.Scenes {
+		if s.Code == code {
+			return s
+		}
+	}
+	return nil
+}
+
 func (m *Map) GetSceneName(x, y int) string {
 	s := m.GetSceneByXY(x, y)
 	if s == nil {

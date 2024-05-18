@@ -53,7 +53,7 @@ scenes:
     path:
       south: m00001-000
   - name: 稻田
-    code: m00001-003
+    code: m00001-002
     desc: 一片绿油油的稻田,快到收获的季节了,地里有农民在除草.
     position: 2,1
     items:

@@ -69,6 +69,7 @@ func LoadPlayer(name string) *player.Player {
 	}
 
 	player.Scene = MapList["m00001"].Scenes[0]
+
 	//todo:给玩家默认物品
 
 	return &player

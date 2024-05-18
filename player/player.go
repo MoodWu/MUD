@@ -1,6 +1,7 @@
 package player
 
 import (
+
 	"mud/common"
 	"mud/item"
 	"strings"
@@ -181,12 +182,36 @@ func isSystemCommand(data string) bool {
 func (p *Player) ProcessSystemCommand(data string) string {
 	commands := strings.Split(data, " ")
 	cmd := commands[0]
+	ret := "什么？"
 	switch cmd {
 	case "look":
-		return p.ShowMap() + "\n" + p.Scene.Desc
+		ret = p.ShowMap() + "\n" + p.Scene.Desc
+	case "east":
+		ret = "你向东走\n"
+		ret += p.moveToScene(cmd)
+	case "west":
+		ret = "你向西走\n"
+		ret += p.moveToScene(cmd)
+	case "north":
+		ret = "你向北走\n"
+		ret += p.moveToScene(cmd)
+	case "south":
+		ret = "你向南走\n"
+		ret += p.moveToScene(cmd)
 	}
 
-	return "什么？"
+	return ret
+}
+
+func (p *Player) moveToScene(direction string) string {
+	s, ok := p.Scene.Path[direction]
+	if ok {
+		p.Scene = p.Scene.Map.GetSceneByCode(s)
+		if p != nil {
+			return p.Scene.Desc
+		}
+	} 
+	return "前方没有路了。试试其他方向吧。"
 }
 
 // 执行动作
