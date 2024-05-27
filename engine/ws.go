@@ -2,12 +2,10 @@ package engine
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-
-	"log"
-	"mud/player"
 
 	"github.com/gorilla/websocket"
 )
@@ -20,14 +18,26 @@ func InitWebSocket() {
 			"message": "pong",
 		})
 	})
+	//将 ./static 目录下的文件直接映射到根路径 /
+	router.StaticFS("/client", http.Dir("./client"))
 
-	// 处理HTTP请求,
-	router.Any("/", func(c *gin.Context) {
+	// // 处理HTTP请求,
+	// router.Any("/", func(c *gin.Context) {
+	// 	if c.Request.Header.Get("Upgrade") == "websocket" {
+	// 		log.Println("upgrade")
+	// 		// c.Next() // 继续后续的处理，交给WebSocket处理器
+	// 		wsHandler(c.Writer, c.Request)
+	// 	} else {
+	// 		c.File("mud.html") // 返回client.html文件
+
+	// 	}
+	// })
+
+	router.GET("/ws", func(c *gin.Context) {
 		if c.Request.Header.Get("Upgrade") == "websocket" {
+			log.Println("upgrade")
 			// c.Next() // 继续后续的处理，交给WebSocket处理器
 			wsHandler(c.Writer, c.Request)
-		} else {
-			c.File("client.html") // 返回client.html文件
 		}
 	})
 
@@ -114,7 +124,7 @@ func (ws *WebSocket) process(msg []byte) error {
 		//todo:判断用户是否存在
 		ret.CMD = "loginpwd"
 		ret.Data = "请输入密码："
-		ws.Player = &player.Player{}
+		ws.Player = &Player{}
 		ws.Player.Name = cmd.Data
 	case "loginpwd":
 		//todo:检查用户密码是否正确

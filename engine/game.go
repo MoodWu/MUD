@@ -3,9 +3,6 @@ package engine
 import (
 	"encoding/json"
 	"fmt"
-	"mud/item"
-	"mud/maps"
-	"mud/player"
 )
 
 var commands map[string]ICommand
@@ -49,23 +46,25 @@ func (c *LoginPwdCMD) Process(cmd Command) ([]byte, error) {
 	return d, nil
 }
 
-var MapList map[string]*maps.Map
+var MapList map[string]*Map
 
 func init() {
-	m := maps.InitMap()
-	MapList = make(map[string]*maps.Map, 0)
+	m := InitMap()
+	MapList = make(map[string]*Map, 0)
 	MapList[m.Code] = m
 }
 
 // 加载一个已有的用户
-func LoadPlayer(name string) *player.Player {
-	player := player.Player{
-		Name:     name,
-		NickName: name,
-		Passwd:   "123",
-		Age:      1,
-		Scene:    nil,
-		Invtory:  make([]*item.Thing, 0),
+func LoadPlayer(name string) *Player {
+	hp := PlayerStatus{HP: 100, MaxHP: 100}
+	player := Player{
+		Name:         name,
+		NickName:     name,
+		Passwd:       "123",
+		Age:          1,
+		Scene:        nil,
+		Inventory:    make([]*Goods, 0),
+		PlayerStatus: hp,
 	}
 
 	player.Scene = MapList["m00001"].Scenes[0]

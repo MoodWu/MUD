@@ -1,0 +1,67 @@
+#新手村地图
+map: 新手村
+code: m00001
+desc: 这是一个不大的村子,看起来安静祥和,你可以在这里学习如何探索世界
+scale: 3,3
+initpoint: 1,1
+scenes:
+  - name: 村子
+    code: m00001-000
+    desc: 村子不大,村子北面有一座山,西边是一边树林,东边是一片田地,南面有一条小河流过,看起来很安静,村里有小孩在嬉戏,有老人在村头的大树下下棋.
+    position: 1,1
+    items:
+      hulu:
+        count: 2
+        code: m00001-hulu
+        desc: "20个葫芦(hulu)"
+        detail: 
+        qty: 20
+        actions:
+          - cmd: get hulu
+            desc: get hulu:拾取葫芦
+            script: |
+              return " 你捡起了一个普通的葫芦，里面盛满了清水。"
+         
+          - cmd: drink water
+            desc: drink water:喝水
+            scipt: |
+              hulu = player.HasItem("hulu")
+              if hulu ~= nil then
+                return "你拿起葫芦咕嘟咕嘟的喝了几口水。"
+              else 
+                return "你先得拾起葫芦 get hulu"
+              end 
+    path:
+      west: m00001-001 
+      east: m00001-002
+      north: m00001-003
+      south: m00001-004
+  - name: 树林
+    code: m00001-001
+    desc: 一片稀疏的果林,有桃树和李树
+    position: 0,1
+    items:
+    path:
+      east: m00001-000
+  - name: 小河
+    code: m00001-004
+    desc: 一条10米宽的小河,水流缓慢,水很浅,可以看到河底的鹅卵石和成群的小鱼
+    position: 1,0
+    items:
+    path:
+      north: m00001-000  
+  - name: 后山
+    code: m00001-003
+    desc: 一座不太高的小山包,但是周围地势平坦,在山顶应该可以看到很远.
+    position: 1,2
+    items:
+    path:
+      south: m00001-000
+  - name: 稻田
+    code: m00001-002
+    desc: 一片绿油油的稻田,快到收获的季节了,地里有农民在除草.
+    position: 2,1
+    items:
+    path:
+      west: m00001-000
+

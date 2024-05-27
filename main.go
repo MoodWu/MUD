@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"mud/engine"
-	"mud/maps"
 )
 
 func main() {
@@ -17,11 +16,11 @@ func main() {
 }
 
 // 初始化世界
-func InitWorld() *maps.World {
-	m0 := maps.InitMap()
-	u0 := &maps.Unit{X: 0, Y: 0, Map: m0}
-	world := &maps.World{}
-	world.Maps = make([]*maps.Unit, 0)
+func InitWorld() *engine.World {
+	m0 := engine.InitMap()
+	u0 := &engine.Unit{X: 0, Y: 0, Map: m0}
+	world := &engine.World{}
+	world.Maps = make([]*engine.Unit, 0)
 	world.Maps = append(world.Maps, u0)
 
 	return world

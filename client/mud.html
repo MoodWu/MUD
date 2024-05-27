@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUD Game</title>
+    <style>
+
+        body {
+            margin: 0;
+            font-family: Courier New, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+            box-sizing: border-box;
+        }
+
+        .light-theme {
+            background-color: #ffffff;
+            color: #000000;
+        }
+
+        .dark-theme {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+       
+         .content {
+             height: calc(100vh - 80px);  /*40px for input and button */
+            
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .input-container {
+            display: flex; 
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            padding: 10px;
+            background-color: #f0f0f0;
+        } 
+
+        input {
+            flex-grow: 1;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+        button {
+            width: 100px; /* Fixed width */
+            padding: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+    <div class="content" id="message-container">
+        <p></p>
+        <!-- 添加更多文本以生成滚动条 -->
+    </div>
+    <div class="input-container">
+        <input type="text" id="message-input" placeholder="Enter text...">
+        <button id="send-button">Send</button>
+    </div>
+    </div>
+    <!--
+        Add the following polyfill for Microsoft Edge 17/18 support:
+        <script src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding.min.js"></script>
+        (see https://caniuse.com/#feat=textencoder)
+        -->
+    <script src="wasm_exec.js"></script>
+    <script>
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark-theme');
+                document.body.classList.remove('light-theme');
+            } else {
+                document.body.classList.add('light-theme');
+                document.body.classList.remove('dark-theme');
+            }
+        }
+
+        // 初次加载时应用主题
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            applyTheme('light');
+        } else {
+            applyTheme('dark');
+        }
+
+        // 监听主题变化
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+            applyTheme(e.matches ? 'light' : 'dark');
+        });
+
+        applyTheme('dark');
+    var maxScreens = 3; // 定义要保留的最大屏数
+    var messageContainer = document.getElementById('message-container');
+    
+    
+    // 创建一个隐藏的p元素，并将其添加到body中
+    var hiddenP = document.createElement('p');
+    hiddenP.style.visibility = 'hidden';
+    hiddenP.style.position = 'absolute';
+    hiddenP.style.whiteSpace = 'pre'; // 避免换行影响高度
+    hiddenP.textContent = 'dummy'; // 用一个字母作为内容，以便计算高度
+    document.body.appendChild(hiddenP);
+    var lineHeight = hiddenP.clientHeight;
+
+    // 移除隐藏的p元素
+    document.body.removeChild(hiddenP);
+
+    console.log("line height:",lineHeight)
+
+    document.getElementById('message-input').addEventListener('keypress', function(event) {
+        if (event.keyCode === 13) {
+            event.preventDefault(); // 阻止默认的回车换行行为
+            document.getElementById('send-button').click(); // 触发按钮点击事件
+        }
+    });
+    document.getElementById('send-button').addEventListener('click', function() {
+        var messageInput = document.getElementById('message-input');
+
+        sendMessage(messageInput.value)
+        addMessage("> " + messageInput.value);
+        // messageInput.value = '';
+        //全选输入框文字
+        messageInput.setSelectionRange(0,messageInput.value.length);
+
+    }
+    );
+
+    function addMessage(data) {
+        console.log("add:",data)
+        var newMessage = document.createElement('div');
+        
+        newMessage.innerHTML = data
+        messageContainer.appendChild(newMessage);
+        
+        // 删除超过最大屏数的消息
+        var messageCount = messageContainer.children.length;
+        var screenHeight = messageContainer.clientHeight;
+        console.log("msgCnt:",messageCount,",screenHeight:",screenHeight,",max:",maxScreens * screenHeight / lineHeight,",lines:",screenHeight / lineHeight)
+        if (messageCount > maxScreens * screenHeight / lineHeight) { // 假设每行高度为16px
+            var excess = messageCount - maxScreens * screenHeight / lineHeight;
+            for (var i = 0; i < excess; i++) {
+                messageContainer.removeChild(messageContainer.firstChild);
+            }
+        }
+
+        // 将滚动条滚动到消息容器的底部
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+    
+    var hostname = window.location.hostname;
+    console.log("Hostname:", hostname);
+    var port = window.location.port;
+    if (port === "") {
+        port = window.location.protocol === "https:" ? "443" : "80";
+    }
+    console.log("Port:", port);
+
+
+    window.onload = function() {
+        document.getElementById('message-input').focus();
+    };
+
+    const go = new Go();
+    WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then(result => {
+        go.run(result.instance);
+
+        // Start the WebSocket connection
+
+        url = "ws://" + hostname +":" + port + "/ws";
+        connectWebSocket(url,addMessage)
+
+        // start("ws://" + hostname +":" + port + "/ws", addMessage);
+
+        
+    });
+    </script>
+</body>
+</html>

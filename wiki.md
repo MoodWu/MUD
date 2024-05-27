@@ -114,6 +114,8 @@ HasSpace // * 有库存容量
 玩家执行动作时，要先判断动作是否存在，因此玩家
 
 
+所有动作直接用lua脚本，目前阶段传递player 和 item 两个参数
+
 player实现PerformAction，接收一个实现了Action接口的Struct，为参数，如果Action有PreCondiiton，先进行PreCondition的判断，在执行Action，Action返回动作的效果，Object 可以是player 表明对玩家其效果，可以是 map，表示对地图起效果，比如可以产生新的通道，可以是system表示对系统起效果
 [{
   Object:Player

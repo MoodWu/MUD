@@ -11,9 +11,10 @@ scenes:
     position: 1,1
     items:
       - qty: 2
-        item:
+        葫芦:
           - name: hulu
-            desc: 葫芦(hulu)
+            desc: "%d个葫芦(hulu)"
+            detail: 
             qty: 20
             actions:
               - cmd: get hulu
@@ -21,11 +22,12 @@ scenes:
                 effect:
                 effectDesc: 你捡起了一个普通的葫芦，里面盛满了清水。
                 condition: hasNoOwner
-              - cmd: drink,drink water
+              - cmd: drink water
                 desc: drink water:喝水
                 effect:
                 effectDesc: 你拿起葫芦咕嘟咕嘟的喝了几口水。
                 condition: hasOwner
+                failMsg: 你先得拾起葫芦 get hulu
     path:
       west: m00001-001 
       east: m00001-002
