@@ -63,7 +63,7 @@ func LoadPlayer(name string) *Player {
 		Passwd:       "123",
 		Age:          1,
 		Scene:        nil,
-		Inventory:    make([]*Goods, 0),
+		Inventory:    make([]Item, 0),
 		PlayerStatus: hp,
 	}
 

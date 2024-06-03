@@ -258,12 +258,18 @@ func (s *Scene) GetDesc() string {
 	for k, _ := range s.Path {
 		ret += k + " "
 	}
-	ret += "\n"
+
+	goodList := ""
+	bFlag := false
 
 	for _, goods := range s.Items {
 		if goods.Quantity > 0 {
-			ret += goods.Item.GetItemName() + ",数量：" + strconv.Itoa(goods.Quantity) + "\n"
+			bFlag = true
+			goodList += goods.Item.GetItemDesc() + ",数量：" + strconv.Itoa(goods.Quantity) + "\n"
 		}
+	}
+	if bFlag {
+		ret += "\n这里的物品有:\n" + goodList
 	}
 
 	return ret

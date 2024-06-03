@@ -2,13 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"syscall/js"
 )
-
-type Command struct {
-	CMD  string `json:"cmd"`
-	Data string `json:"data"`
-}
 
 var command string
 var addMessage js.Value
@@ -72,6 +69,7 @@ func sendMessage(this js.Value, args []js.Value) interface{} {
 // 处理服务器的回应
 func Process(data string) {
 	println("process:", data)
+	command = "command"
 	var cmd Command
 	err := json.Unmarshal([]byte(data), &cmd)
 	if err != nil {
@@ -86,10 +84,81 @@ func Process(data string) {
 	case "loginpwd":
 		addMessage.Invoke(js.ValueOf("请输入密码:"))
 		command = "loginpwd"
+	case "map":
+		detail := MapDetail{}
+		err := json.Unmarshal([]byte(cmd.Data), &detail)
+		if err != nil {
+			fmt.Println("Unmarshal error.", err)
+			addMessage.Invoke(js.ValueOf("出了点问题，世界被迷雾遮盖。"))
+			return
+		}
+		mapDetail := showMap(detail)
+		addMessage.Invoke(js.ValueOf(mapDetail))
 	default:
-		addMessage.Invoke(js.ValueOf(cmd.Data))
-		command = "command"
+		// 将回车转换为<br>
+		msg := cmd.Data
+		msg = strings.ReplaceAll(msg, "\n", "<br>")
+		addMessage.Invoke(js.ValueOf(msg))
 	}
+}
+
+func showMap(info MapDetail) string {
+	ret := "<table border=\"0\">"
+	//根据map的长宽设定table的行列
+	for col := info.MapInfo.Width - 1; col >= 0; col-- {
+		ret += "<tr>"
+		for row := 0; row < info.MapInfo.Long; row++ {
+			bFound := false
+
+			for _, s := range info.MapInfo.Scenes {
+				if s.X == row && s.Y == col {
+
+					if info.MapInfo.X == row && info.MapInfo.Y == col {
+						ret += "<td align=\"center\" style=\"color:red\">" + s.Name + "</td>"
+					} else {
+						ret += "<td align=\"center\" >" + s.Name + "</td>"
+					}
+
+					if _, ok := s.Path["east"]; ok {
+						ret += "<td>----</td>"
+					} else {
+						ret += "<td></td>"
+					}
+					bFound = true
+					break
+				}
+			}
+			if !bFound {
+				ret += "<td></td><td></td>"
+			}
+		}
+		ret += "</tr>"
+		ret += "<tr>"
+		for row := 0; row < info.MapInfo.Long; row++ {
+			bFound := false
+
+			for _, s := range info.MapInfo.Scenes {
+				if s.X == row && s.Y == col {
+					if _, ok := s.Path["south"]; ok {
+						ret += "<td align=\"center\">|</td><td ></td>"
+					} else {
+						ret += "<td></td><td></td>"
+					}
+					bFound = true
+					break
+				}
+			}
+			if !bFound {
+				ret += "<td></td><td></td>"
+			}
+		}
+		ret += "</tr>"
+	}
+	ret += "</table>"
+
+	ret += "<div>" + strings.ReplaceAll(info.SceneDesc, "\n", "<br>") + "</div>"
+
+	return ret
 }
 
 func registerCallbacks() {

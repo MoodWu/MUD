@@ -18,7 +18,7 @@ func (i *NormalItem) GetItemName() string {
 }
 
 func (i *NormalItem) GetItemDesc() string {
-	return fmt.Sprintf(i.Desc, i.Quantity)
+	return i.Desc
 }
 
 func (i *NormalItem) GetItemDetail() string {
@@ -26,6 +26,11 @@ func (i *NormalItem) GetItemDetail() string {
 }
 
 func (i *NormalItem) GetItemQuantity() int {
+	return i.Quantity
+}
+
+func (i *NormalItem) SetItemQuantity(v int) int {
+	i.Quantity = v
 	return i.Quantity
 }
 

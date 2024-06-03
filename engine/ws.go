@@ -41,10 +41,9 @@ func InitWebSocket() {
 		}
 	})
 
-	// // GET 与 Any针对同一个url，Any必须在Get之前
-	// router.GET("/", func(c *gin.Context) {
-	// 	wsHandler(c.Writer, c.Request)
-	// })
+	router.GET("/", func(c *gin.Context) {
+		c.Redirect(302, "/client/mud.html")
+	})
 	router.Run(":5250")
 }
 
@@ -136,9 +135,7 @@ func (ws *WebSocket) process(msg []byte) error {
 		//重设密码
 	default:
 		//命令交互,直接由player处理
-
-		ret.CMD = ""
-		ret.Data = ws.Player.Process(cmd.Data)
+		ret = ws.Player.Process(cmd.Data)
 	}
 
 	data, err := json.Marshal(ret)

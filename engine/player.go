@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -16,7 +17,6 @@ func init() {
 	systemCommand["get"] = ""
 	systemCommand["drop"] = ""
 	systemCommand["inventory"] = ""
-
 }
 
 // 创建一个用户
@@ -27,7 +27,7 @@ func NewPlayer(name, nickname, passwd string) *Player {
 		Passwd:    passwd,
 		Age:       1,
 		Scene:     nil,
-		Inventory: make([]*Goods, 0),
+		Inventory: make([]Item, 0),
 	}
 
 	//todo:给玩家默认物品
@@ -184,47 +184,50 @@ func getItemAction(item Item, p *Player, data string) Action {
 }
 
 // 执行发来的命令，目前认为单字命令都是系统命令
-func (p *Player) Process(data string) string {
-	ret := "什么？"
+func (p *Player) Process(data string) Command {
+	retCmd := Command{CMD: "common", Data: "什么?"}
+
 	commands := strings.Split(data, " ")
 	cmd := commands[0]
 
 	if len(commands) == 1 || isSystemCommand(cmd) {
-		return p.ProcessSystemCommand(data)
+		retCmd = p.ProcessSystemCommand(data)
+		return retCmd
 	}
 
 	//object := commands[1]
 
 	//先找物品，
 	for _, i := range p.Inventory {
-		if i.Quantity > 0 {
-			action := getItemAction(i.Item, p, data)
+		if i.GetItemQuantity() > 0 {
+			action := getItemAction(i, p, data)
 			if action != nil {
-				ret = p.PerformAction(action, i)
-				return ret
+				retCmd.Data = p.PerformAction(action, i)
+				return retCmd
 			}
 		}
 	}
 
 	//再找场景物品，
+
 	for _, i := range p.Scene.Items {
 		if i.Quantity > 0 {
 			action := getItemAction(i.Item, p, data)
 			if action != nil {
-				ret = p.PerformAction(action, i)
-				return ret
+				retCmd.Data = p.PerformAction(action, i.Item)
+				return retCmd
 			}
 		}
 	}
 
-	return ret
+	return retCmd
 }
 
 // 获得玩家身上的物品
 func (p *Player) getInventoryByName(itemName string) Item {
 	for _, i := range p.Inventory {
-		if i.Item.GetItemName() == itemName && i.Quantity > 0 {
-			return i.Item
+		if i.GetItemName() == itemName && i.GetItemQuantity() > 0 {
+			return i
 		}
 	}
 
@@ -249,17 +252,57 @@ func isSystemCommand(data string) bool {
 }
 
 // 处理系统命令
-func (p *Player) ProcessSystemCommand(data string) string {
+func (p *Player) ProcessSystemCommand(data string) Command {
+	retCmd := Command{CMD: "common", Data: "什么?"}
 	commands := strings.Split(data, " ")
 	cmd := commands[0]
-	ret := "什么？"
+
 	switch cmd {
 	case "look":
 		//不带参数的look，就是直接看当前环境
 		if len(commands) == 1 {
-			ret = p.ShowMap() + "\n" + p.Scene.GetDesc()
+			detail := MapDetail{}
+
+			retCmd.CMD = "map"
+			detail.MapInfo = p.getMapInfo()
+			detail.SceneDesc = p.Scene.GetDesc()
+
+			content, err := json.Marshal(detail)
+			if err != nil {
+				log.Println("marshal error.", err)
+				retCmd.Data = "世界被迷雾遮盖"
+			} else {
+				retCmd.Data = string(content)
+			}
 		} else {
-			//查看某个物品
+			//查看某个物品,先看装备
+			for _, v := range p.Inventory {
+				if v.GetItemName() == commands[1] {
+					ni, ok := v.(*NormalItem)
+					if ok {
+						for _, action := range ni.Actions {
+							if action.GetActionName() == "look "+ni.Name {
+								retCmd.Data = p.PerformAction(action, ni)
+								return retCmd
+							}
+						}
+					}
+				}
+			}
+
+			for _, v := range p.Scene.Items {
+				if v.Item.GetItemName() == commands[1] {
+					ni, ok := v.Item.(*NormalItem)
+					if ok {
+						for _, action := range ni.Actions {
+							if action.GetActionName() == "look "+ni.Name {
+								retCmd.Data = p.PerformAction(action, ni)
+								return retCmd
+							}
+						}
+					}
+				}
+			}
 		}
 	case "get":
 		//捡起物品
@@ -270,55 +313,71 @@ func (p *Player) ProcessSystemCommand(data string) string {
 		goods := p.getSceneItemByName(object)
 
 		if goods == nil {
-			ret = "没有找到" + object
+			retCmd.Data = "没有找到" + object
 			break
 		}
+		fmt.Println("goods count 1:", goods.Quantity)
 		ni, ok := goods.Item.(*NormalItem)
 		if ok {
+			fmt.Println("goods count:", goods.Quantity)
 			if goods.Quantity > 0 {
-				//先看是否有此物品
-				bFound := false
-				for _, item := range p.Inventory {
-					if item.Item.GetItemName() == object {
-						item.Quantity++
-						bFound = true
-						break
-					}
-				}
-				//如果没有此物品，添加一个
-				if !bFound {
-					p.Inventory = append(p.Inventory, &Goods{Item: ni, Quantity: 1})
-				}
+				p.Inventory = append(p.Inventory, ni)
 				goods.Quantity--
 				action := getItemAction(goods.Item, p, "get "+ni.Name)
 				if action != nil {
-					ret = p.PerformAction(action, goods)
+					retCmd.Data = p.PerformAction(action, ni)
 				} else {
-					ret = "你拾起了" + ni.Name
+					retCmd.Data = "你拾起了" + ni.Name
 				}
+				goods.Item = ni
 			} else {
-				ret = "手慢了，已经被人捡走了。"
+				retCmd.Data = "手慢了，已经被人捡走了。"
 			}
+		} else {
+			fmt.Println("不能转换类型 NormalItem:")
 		}
 	case "drop":
 		//丢弃物品
 	case "east":
-		ret = "你向东走\n"
-		ret += p.moveToScene(cmd)
+		retCmd.Data = "你向东走\n"
+		retCmd.Data += p.moveToScene(cmd)
 	case "west":
-		ret = "你向西走\n"
-		ret += p.moveToScene(cmd)
+		retCmd.Data = "你向西走\n"
+		retCmd.Data += p.moveToScene(cmd)
 	case "north":
-		ret = "你向北走\n"
-		ret += p.moveToScene(cmd)
+		retCmd.Data = "你向北走\n"
+		retCmd.Data += p.moveToScene(cmd)
 	case "south":
-		ret = "你向南走\n"
-		ret += p.moveToScene(cmd)
+		retCmd.Data = "你向南走\n"
+		retCmd.Data += p.moveToScene(cmd)
 	case "hp":
-		ret = p.getHP()
+		retCmd.Data = p.getHP()
 	case "inventory":
-		ret = p.getInventory()
+		retCmd.Data = p.getInventory()
 	}
+
+	return retCmd
+}
+
+// 获得地图信息，用于绘制地图
+func (p *Player) getMapInfo() *MapInfo {
+	ret := p.Scene.Map.MapInfo
+	if ret == nil {
+		ret = &MapInfo{Name: p.Scene.Map.Name, Code: p.Scene.Map.Code, Long: p.Scene.Map.Long, Width: p.Scene.Map.Wide}
+		ret.Scenes = make([]SceneInfo, 0)
+		for _, s := range p.Scene.Map.Scenes {
+			si := SceneInfo{
+				X:    s.X,
+				Y:    s.Y,
+				Name: s.Name,
+				Code: s.Code,
+				Path: s.Path,
+			}
+			ret.Scenes = append(ret.Scenes, si)
+		}
+	}
+	ret.X = p.Scene.X
+	ret.Y = p.Scene.Y
 
 	return ret
 }
@@ -328,9 +387,25 @@ func (p *Player) getHP() string {
 }
 
 func (p *Player) getInventory() string {
+	type Thing struct {
+		Name     string
+		Quantity int
+		Detail   string
+	}
 	ret := ""
-	for _, goods := range p.Inventory {
-		ret += fmt.Sprintf("物品：%s,数量：%d %s\n", goods.Item.GetItemName(), goods.Quantity, goods.Item.GetItemDetail())
+	goods := make(map[string]Thing, 0)
+	for _, item := range p.Inventory {
+		thing, ok := goods[item.GetItemName()]
+		if ok {
+			thing.Quantity += item.GetItemQuantity()
+		} else {
+			thing = Thing{item.GetItemName(), item.GetItemQuantity(), item.GetItemDetail()}
+		}
+		goods[item.GetItemName()] = thing
+	}
+
+	for k, v := range goods {
+		ret += fmt.Sprintf("物品：%s,数量：%d %s\n", k, v.Quantity, v.Detail)
 	}
 	return ret
 }
@@ -354,9 +429,13 @@ func (p *Player) moveToScene(direction string) string {
 }
 
 // 执行动作
-func (p *Player) PerformAction(action Action, goods *Goods) string {
+// todo:以后的动作可能需要传入多个item，玩家的所有装备，比如合成操作
+func (p *Player) PerformAction(action Action, item Item) string {
 	L := luaEngine.Get()
 	defer luaEngine.Put(L)
+
+	registerItem(L)
+	registerPlayer(L)
 
 	playerUD := L.NewUserData()
 	playerUD.Value = p
@@ -364,9 +443,9 @@ func (p *Player) PerformAction(action Action, goods *Goods) string {
 	L.SetGlobal("player", playerUD)
 
 	itemUD := L.NewUserData()
-	itemUD.Value = goods
-	L.SetMetatable(itemUD, L.GetTypeMetatable("Goods"))
-	L.SetGlobal("goods", itemUD)
+	itemUD.Value = item
+	L.SetMetatable(itemUD, L.GetTypeMetatable("Item"))
+	L.SetGlobal("item", itemUD)
 
 	if err := L.DoString(action.GetScript()); err != nil {
 		log.Println("err execute lua:", err)
@@ -389,7 +468,7 @@ func (p *Player) ShowMap() string {
 */
 
 // 注册player类型
-func registPlayer(L *lua.LState) {
+func registerPlayer(L *lua.LState) {
 	mt := L.NewTypeMetatable("Player")
 	L.SetGlobal("Player", mt)
 	L.SetField(mt, "__index", L.SetFuncs(L.NewTable(), playerMethods))
@@ -418,20 +497,78 @@ func getPlayerItemByCode(L *lua.LState) int {
 // 根据物品code返回玩家的装备中物品
 func (p *Player) getItemByCode(L *lua.LState) int {
 	code := L.ToString(2)
+	ret := L.NewTable()
 	bFound := false
 	for _, i := range p.Inventory {
-		if i.Item.GetItemName() == code {
+		if i.GetItemName() == code {
 			itemUD := L.NewUserData()
 			itemUD.Value = i
 			L.SetMetatable(itemUD, L.GetTypeMetatable("Item"))
-			L.Push(itemUD)
+			ret.Append(itemUD)
+
+			// L.RawSet(ret, lua.LString(code), itemUD)
 			bFound = true
 			break
 		}
 	}
 	if !bFound {
 		L.Push(lua.LNil)
+	} else {
+		L.Push(ret)
 	}
 
 	return 1
+}
+
+// 注册 item 类型
+func registerItem(L *lua.LState) {
+	mt := L.NewTypeMetatable("Item")
+	L.SetGlobal("Item", mt)
+	L.SetField(mt, "__index", L.SetFuncs(L.NewTable(), itemMethods))
+}
+
+var itemMethods = map[string]lua.LGFunction{
+	"getItemName":     getItemName,
+	"getItemQuantity": getItemQuantity,
+	"setItemQuantity": setItemQuantity,
+}
+
+func getItemName(L *lua.LState) int {
+	ud := L.CheckUserData(1)
+	if item, ok := ud.Value.(Item); ok {
+		L.Push(lua.LString(item.GetItemName()))
+		return 1
+	}
+	L.ArgError(1, "Item expected")
+	return 0
+}
+
+func getItemQuantity(L *lua.LState) int {
+	ud := L.CheckUserData(1)
+	if item, ok := ud.Value.(Item); ok {
+		L.Push(lua.LNumber(item.GetItemQuantity()))
+		return 1
+	}
+	L.ArgError(1, "Item expected")
+	return 0
+}
+
+// checkItem 从 Lua stack 中获取 Item 实例
+func checkItem(L *lua.LState) Item {
+	ud := L.CheckUserData(1)
+	if v, ok := ud.Value.(Item); ok {
+		return v
+	}
+	L.ArgError(1, "Item expected")
+	return nil
+}
+func setItemQuantity(L *lua.LState) int {
+	item := checkItem(L)
+	v := L.ToInt(2)
+	if item != nil {
+		item.SetItemQuantity(v)
+		return 0
+	}
+	L.ArgError(1, "Item expected")
+	return 0
 }

@@ -10,6 +10,28 @@ type Unit struct {
 	Y   int
 	Map *Map
 }
+
+type SceneInfo struct {
+	X    int
+	Y    int
+	Name string
+	Code string
+	Path map[string]string
+}
+type MapInfo struct {
+	Name string
+	Code string
+	Long int
+	Width int
+	Scenes []SceneInfo
+	X      int
+	Y      int
+}
+type MapDetail struct {
+	MapInfo *MapInfo
+	SceneDesc string
+}
+
 type Map struct {
 	Name        string            // 地图名称
 	Code        string            //唯一编码
@@ -19,6 +41,7 @@ type Map struct {
 	RefreshTime int               //物品刷新时间
 	Scenes      []*Scene          //地图上的场景
 	Connection  map[string]string //地图与其他地图的连接
+	MapInfo     *MapInfo
 }
 
 type Scene struct {

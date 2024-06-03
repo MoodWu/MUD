@@ -6,7 +6,7 @@ type Player struct {
 	Passwd    string
 	Age       int
 	Scene     *Scene
-	Inventory []*Goods
+	Inventory []Item
 	PlayerStatus
 }
 
