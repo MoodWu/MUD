@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 	"syscall/js"
 )
@@ -79,29 +78,29 @@ func Process(data string) {
 
 	switch cmd.CMD {
 	case "welcome":
-		addMessage.Invoke(js.ValueOf("请输入用户名:"))
+		showMsg("请输入用户名:")
 		command = "login"
 	case "loginpwd":
-		addMessage.Invoke(js.ValueOf("请输入密码:"))
+		showMsg("请输入密码:")
 		command = "loginpwd"
 	case "map":
 		detail := MapDetail{}
 		err := json.Unmarshal([]byte(cmd.Data), &detail)
 		if err != nil {
-			fmt.Println("Unmarshal error.", err)
-			addMessage.Invoke(js.ValueOf("出了点问题，世界被迷雾遮盖。"))
+			println("Unmarshal error.", err)
+			showMsg("出了点问题，世界被迷雾遮盖。")
 			return
 		}
 		mapDetail := showMap(detail)
-		addMessage.Invoke(js.ValueOf(mapDetail))
+		showMsg(mapDetail)
 	default:
-		// 将回车转换为<br>
-		msg := cmd.Data
-		msg = strings.ReplaceAll(msg, "\n", "<br>")
-		addMessage.Invoke(js.ValueOf(msg))
+		showMsg(cmd.Data)
 	}
 }
-
+func showMsg(data string) {
+	data = "<div>" + strings.ReplaceAll(data, "\n", "<br>") + "</div>"
+	addMessage.Invoke(js.ValueOf(data))
+}
 func showMap(info MapDetail) string {
 	ret := "<table border=\"0\">"
 	//根据map的长宽设定table的行列
@@ -156,7 +155,7 @@ func showMap(info MapDetail) string {
 	}
 	ret += "</table>"
 
-	ret += "<div>" + strings.ReplaceAll(info.SceneDesc, "\n", "<br>") + "</div>"
+	ret += "<div>" + info.SceneDesc + "</div>"
 
 	return ret
 }

@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"html"
 	"log"
 	"mud/common"
 	"os"
@@ -72,7 +73,7 @@ func LoadMap(data []byte) *Map {
 	// 加载所有的场景
 	for _, v := range m.Scenes {
 		// todo:现在都默认一种类型，以后需要根据type动态创建
-		s := &Scene{Name: v.Name, Desc: v.Desc, Code: v.Code}
+		s := &Scene{Name: v.Name, Desc: html.UnescapeString(v.Desc), Code: v.Code}
 		s.X, s.Y = common.Convert2XY(v.Position)
 		s.Map = &m0
 		s.Items = make([]*Goods, 0)
@@ -84,10 +85,10 @@ func LoadMap(data []byte) *Map {
 
 		for k, yi := range v.Items {
 			goods := Goods{}
-			item := &NormalItem{Name: k, Desc: yi.Desc, Detail: yi.Detail, Quantity: yi.Quantity}
+			item := &NormalItem{Name: k, Desc: html.UnescapeString(yi.Desc), Detail: html.UnescapeString(yi.Detail), Quantity: yi.Quantity}
 			item.Actions = make([]Action, 0)
 			for _, a := range yi.Actions {
-				action := &NormalAction{Name: a.Name, Desc: a.Desc, Script: a.Script}
+				action := &NormalAction{Name: a.Name, Desc: html.UnescapeString(a.Desc), Script: a.Script}
 				item.Actions = append(item.Actions, action)
 			}
 			goods.Item = item

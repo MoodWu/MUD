@@ -7,24 +7,25 @@ initpoint: 1,1
 scenes:
   - name: 村子
     code: m00001-000
-    desc: 村子不大,村子北面有一座山,西边是一边树林,东边是一片田地,南面有一条小河流过,看起来很安静,村里有小孩在嬉戏,有老人在村头的大树下下棋.
+    desc: |
+      村子不大,村子北面有一座山,西边是一边树林,东边是一片田地,南面有一条小河流过,看起来很安静,村里有小孩在嬉戏,有老人在村头的大树下下棋.
+      地上好像有几个<span style="color:Yellow">葫芦</span>
     position: 1,1
     items:
       hulu:
         count: 2
         code: m00001-hulu
         desc: "青皮葫芦(hulu)"
-        detail: 
+        detail: |
+          巴掌大小的葫芦，估摸着可以装700ml的水。
+          翻过葫芦底部，上面写着"爸爸王国出品，必属精品"。
         qty: 20
         actions:
           - cmd: get hulu
             desc: get hulu:拾取葫芦
             script: |
               return " 你捡起了一个普通的葫芦，里面盛满了清水。"
-          - cmd: look hulu
-            desc: look hulu:查看葫芦
-            script: |
-              return "这是一个普通的青皮葫芦。\n葫芦底部刻有\"爸爸王国出品\"" 
+
           - cmd: drink water
             desc: drink water:喝水
             script: |
@@ -88,4 +89,8 @@ scenes:
     items:
     path:
       west: m00001-000
-
+tasks:
+  - name: 熟悉操作
+    code: m0001-task-01
+    script: |
+      local taskData = player:getTaskData("")

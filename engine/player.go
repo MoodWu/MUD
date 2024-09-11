@@ -17,6 +17,7 @@ func init() {
 	systemCommand["get"] = ""
 	systemCommand["drop"] = ""
 	systemCommand["inventory"] = ""
+	systemCommand["look"] = ""
 }
 
 // 创建一个用户
@@ -300,6 +301,10 @@ func (p *Player) ProcessSystemCommand(data string) Command {
 								return retCmd
 							}
 						}
+
+						//东西找到了，但是没有定义look动作，返回detail
+						retCmd.Data = ni.Detail
+						return retCmd
 					}
 				}
 			}
@@ -531,11 +536,13 @@ var itemMethods = map[string]lua.LGFunction{
 	"getItemName":     getItemName,
 	"getItemQuantity": getItemQuantity,
 	"setItemQuantity": setItemQuantity,
+	"getItemDesc":     getItemDesc,
+	"getItemDetail":   getItemDetail,
 }
 
 func getItemName(L *lua.LState) int {
-	ud := L.CheckUserData(1)
-	if item, ok := ud.Value.(Item); ok {
+	item := checkItem(L)
+	if item != nil {
 		L.Push(lua.LString(item.GetItemName()))
 		return 1
 	}
@@ -544,9 +551,28 @@ func getItemName(L *lua.LState) int {
 }
 
 func getItemQuantity(L *lua.LState) int {
-	ud := L.CheckUserData(1)
-	if item, ok := ud.Value.(Item); ok {
+	item := checkItem(L)
+	if item != nil {
 		L.Push(lua.LNumber(item.GetItemQuantity()))
+		return 1
+	}
+	L.ArgError(1, "Item expected")
+	return 0
+}
+
+func getItemDesc(L *lua.LState) int {
+	item := checkItem(L)
+	if item != nil {
+		L.Push(lua.LString(item.GetItemDesc()))
+		return 1
+	}
+	L.ArgError(1, "Item expected")
+	return 0
+}
+func getItemDetail(L *lua.LState) int {
+	item := checkItem(L)
+	if item != nil {
+		L.Push(lua.LString(item.GetItemDetail()))
 		return 1
 	}
 	L.ArgError(1, "Item expected")
